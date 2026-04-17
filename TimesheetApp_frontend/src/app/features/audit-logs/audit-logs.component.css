@@ -1,0 +1,175 @@
+.filter-card {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 18px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6e6e73;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-actions { display: flex; gap: 0.75rem; }
+
+.header-meta { display: flex; align-items: center; }
+
+.total-badge {
+  background: #f0f7ff;
+  color: #0071e3;
+  border: 1px solid rgba(0,113,227,0.2);
+  border-radius: 980px;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.table-card {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 1.25rem;
+}
+
+.table-wrapper { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  min-width: 900px;
+}
+
+.table th {
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6e6e73;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #fafafa;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  color: #1d1d1f;
+  vertical-align: middle;
+}
+
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #f5f5f7; }
+
+.col-id   { color: #aeaeb2; font-size: 0.75rem; width: 50px; }
+.col-time { white-space: nowrap; }
+.col-user { white-space: nowrap; }
+.col-entity { white-space: nowrap; }
+.col-eid  { color: #6e6e73; width: 50px; }
+.col-ip   { color: #aeaeb2; font-size: 0.75rem; white-space: nowrap; }
+.col-desc { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #6e6e73; }
+
+.time-date { display: block; font-weight: 500; color: #1d1d1f; }
+.time-hour { display: block; font-size: 0.75rem; color: #aeaeb2; }
+
+.user-chip { display: flex; align-items: center; gap: 0.5rem; }
+
+.user-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: #0071e3;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 980px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.badge--green  { background: #f0fdf4; color: #16a34a; }
+.badge--blue   { background: #f0f7ff; color: #0071e3; }
+.badge--red    { background: #fff2f2; color: #ff3b30; }
+.badge--amber  { background: #fff8ed; color: #ff9f0a; }
+.badge--purple { background: #faf5ff; color: #af52de; }
+.badge--teal   { background: #f0fdfa; color: #0d9488; }
+.badge--gray   { background: #f5f5f7; color: #6e6e73; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d1d1f;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-btn:hover:not(:disabled) { border-color: #0071e3; color: #0071e3; }
+.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.page-btn--active { background: #0071e3; border-color: #0071e3; color: #fff; }
+
+.page-info {
+  margin-left: 0.5rem;
+  font-size: 0.8125rem;
+  color: #6e6e73;
+}
+
+@media (max-width: 768px) {
+  .filter-row { grid-template-columns: 1fr 1fr; }
+}
+
+.page-ellipsis {
+  padding: 0.4rem 0.25rem;
+  color: #aeaeb2;
+  font-size: 0.8125rem;
+  user-select: none;
+}
+
+.pagesize-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.form-select--sm {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8125rem;
+  width: auto;
+}

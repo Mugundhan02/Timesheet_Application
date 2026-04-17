@@ -1,0 +1,189 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">My Attendance</h2>
+      <p class="page-sub">{{ todayStr }}</p>
+    </div>
+  </div>
+
+  <app-loader [show]="loading()" [inline]="true" />
+
+  @if (!loading()) {
+
+    <!-- Weekend double-pay banner -->
+    @if (isWeekendToday) {
+      <div class="weekend-banner">
+        <span class="weekend-banner__icon">🎉</span>
+        <div class="weekend-banner__text">
+          <strong>Weekend Work — Double Pay Day!</strong>
+          <span>Working today qualifies you for 2× salary for this day as per company policy.</span>
+        </div>
+        <span class="weekend-badge">2× Pay</span>
+      </div>
+    }
+
+    <!-- Forgot checkout reminder -->
+    @if (forgotCheckout()) {
+      <div class="reminder-banner">
+        <span class="reminder-banner__icon">⚠️</span>
+        <div class="reminder-banner__text">
+          <strong>You forgot to check out!</strong>
+          <span>You checked in on {{ forgotCheckout()!.date | date:'EEE, dd MMM yyyy' }} but never checked out.</span>
+        </div>
+        <button class="btn-fix-checkout" (click)="fixCheckout(forgotCheckout()!.attendanceId)">
+          🔧 Fix Checkout
+        </button>
+      </div>
+    }
+
+    <!-- Check-in card -->
+    <div class="checkin-card">
+      <div class="checkin-card__left">
+        <div class="clock-block">
+          <span class="clock-time">{{ currentTime() | date:'HH:mm' }}</span>
+          <span class="clock-date">{{ currentTime() | date:'EEEE, dd MMM yyyy' }}</span>
+        </div>
+
+        <div class="status-row">
+          @if (forgotCheckout()) {
+            <span class="status-badge status-badge--idle">Fix Previous Checkout</span>
+          } @else if (!isCheckedIn() && todaySessions().length === 0) {
+            <span class="status-badge status-badge--idle">Not Checked In</span>
+          } @else if (isCheckedIn()) {
+            <span class="status-badge status-badge--in">Currently Working</span>
+          } @else {
+            <span class="status-badge status-badge--done">
+              {{ todayStatus() === 'Present' ? 'Full Day' : 'Half Day' }}
+            </span>
+          }
+        </div>
+
+        <!-- Today's sessions summary -->
+        @if (todaySessions().length > 0) {
+          <div class="sessions-list">
+            @for (s of todaySessions(); track s.attendanceId; let i = $index) {
+              <div class="session-row">
+                <span class="session-num">Session {{ i + 1 }}</span>
+                <span class="session-in">In: {{ formatTime(s.checkInTime) }}</span>
+                @if (s.checkOutTime) {
+                  <span class="session-out">Out: {{ formatTime(s.checkOutTime) }}</span>
+                  <span class="session-dur">{{ getDurationStr(s.checkInTime!, s.checkOutTime!) }}</span>
+                } @else {
+                  <span class="session-out session-out--active">Active {{ getWorkDuration() }}</span>
+                }
+              </div>
+            }
+            @if (totalHoursToday() > 0) {
+              <div class="total-hours-row">
+                <span>Total today:</span>
+                <strong>{{ getTotalHoursStr() }}</strong>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="checkin-card__right">
+        @if (forgotCheckout()) {
+          <div class="blocked-badge">🚫 Fix previous checkout first</div>
+        } @else if (!isCheckedIn()) {
+          <!-- Show Check-in whether it's first session or after a checkout -->
+          <button class="btn-checkin" (click)="checkIn()" [disabled]="actionLoading()">
+            @if (actionLoading()) { <span class="spinner-btn"></span> } @else { ✅ }
+            {{ todaySessions().length > 0 ? 'Check In Again' : 'Check In' }}
+          </button>
+        } @else {
+          <button class="btn-checkout" (click)="checkOut()" [disabled]="actionLoading()">
+            @if (actionLoading()) { <span class="spinner-btn"></span> } @else { 🚪 }
+            Check Out
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="summary-grid">
+      <div class="summary-card summary-card--green">
+        <span class="summary-card__icon">✅</span>
+        <span class="summary-card__value">{{ totalPresent() }}</span>
+        <span class="summary-card__label">Present</span>
+      </div>
+      <div class="summary-card summary-card--amber">
+        <span class="summary-card__icon">🕐</span>
+        <span class="summary-card__value">{{ totalHalfDay() }}</span>
+        <span class="summary-card__label">Half Day</span>
+      </div>
+      <div class="summary-card summary-card--purple">
+        <span class="summary-card__icon">🏖️</span>
+        <span class="summary-card__value">{{ totalLeave() }}</span>
+        <span class="summary-card__label">Leave Taken</span>
+      </div>
+      <div class="summary-card summary-card--red">
+        <span class="summary-card__icon">❌</span>
+        <span class="summary-card__value">{{ totalAbsent() }}</span>
+        <span class="summary-card__label">Absent</span>
+      </div>
+    </div>
+
+    <!-- History table -->
+    <div class="section-title-row">
+      <h3 class="section-title">Attendance History</h3>
+      <span class="record-count">{{ groupedHistory().length }} day(s)</span>
+    </div>
+
+    @if (groupedHistory().length === 0) {
+      <div class="empty-state">
+        <div class="empty-state__icon">📅</div>
+        <h3>No attendance records</h3>
+        <p>Your check-in history will appear here.</p>
+      </div>
+    } @else {
+      <div class="history-list">
+        @for (day of groupedHistory(); track day.date) {
+          <div class="history-day" [class.history-day--warning]="day.hasOpen">
+            <!-- Day header -->
+            <div class="history-day__header">
+              <strong class="history-day__date">
+                {{ day.date | date:'EEE, dd MMM yyyy' }}
+                @if (isDateWeekend(day.date)) {
+                  <span class="weekend-tag">🌟 Weekend · 2× Pay</span>
+                }
+              </strong>
+              <div class="history-day__summary">
+                <span class="history-day__total">Total: {{ day.totalStr }}</span>
+                <app-status-badge [status]="day.status" />
+                @if (day.hasOpen && auth.isAdminOrHR()) {
+                  <button class="btn-fix-sm" (click)="fixCheckout(day.sessions[0].attendanceId)">Fix</button>
+                }
+              </div>
+            </div>
+
+            <!-- Sessions for this day -->
+            <div class="history-day__sessions">
+              @for (s of day.sessions; track s.attendanceId; let i = $index) {
+                <div class="history-session">
+                  <span class="history-session__num">Session {{ i + 1 }}</span>
+                  <span class="history-session__time">
+                    In: <strong>{{ formatTime(s.checkInTime) }}</strong>
+                  </span>
+                  <span class="history-session__time">
+                    Out:
+                    @if (s.checkOutTime) {
+                      <strong>{{ formatTime(s.checkOutTime) }}</strong>
+                    } @else {
+                      <span class="missing-checkout">⚠️ Missing</span>
+                    }
+                  </span>
+                  @if (s.checkInTime && s.checkOutTime) {
+                    <span class="history-session__dur">{{ getDurationStr(s.checkInTime, s.checkOutTime) }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,127 @@
+import { Component, inject, signal, effect, model, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { LeaveService } from '../../../core/services/leave.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { LeaveType, LeaveBalance } from '../../../core/models/leave.model';
+
+@Component({
+  selector: 'app-leave-form',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './leave-form.component.html',
+  styleUrls: ['./leave-form.component.css']
+})
+export class LeaveFormComponent implements OnInit {
+  private leaveService = inject(LeaveService);
+  private toastService = inject(ToastService);
+  private router       = inject(Router);
+
+  leaveType  = model<LeaveType>('Casual');
+  startDate  = model('');
+  endDate    = model('');
+  reason     = model('');
+  loading    = signal(false);
+  formError  = signal('');
+  balance    = signal<LeaveBalance | null>(null);
+
+  // Today's date in yyyy-MM-dd format for [min] attribute
+  minDate = new Date().toISOString().split('T')[0];
+
+  leaveTypes: LeaveType[] = ['Casual', 'Sick', 'Earned', 'Maternity', 'Paternity', 'Unpaid'];
+
+  leaveTypeInfo: Record<string, string> = {
+    Casual:    'For personal errands or short breaks.',
+    Sick:      'For illness or medical appointments.',
+    Earned:    'Annual leave earned over time.',
+    Maternity: 'For new mothers — up to 26 weeks.',
+    Paternity: 'For new fathers — up to 15 days.',
+    Unpaid:    'Leave without pay when other leaves exhausted.'
+  };
+
+  private clearEffect = effect(() => {
+    this.leaveType(); this.startDate(); this.endDate();
+    this.formError.set('');
+  });
+
+  ngOnInit() {
+    this.leaveService.getMyBalance().subscribe({
+      next: b => this.balance.set(b),
+      error: () => {} // silently fail — balance is optional display
+    });
+  }
+
+  getRemaining(type: LeaveType): number | null {
+    const b = this.balance();
+    if (!b) return null;
+    switch (type) {
+      case 'Casual':    return b.casualRemaining;
+      case 'Sick':      return b.sickRemaining;
+      case 'Earned':    return b.earnedRemaining;
+      case 'Maternity': return b.maternityRemaining;
+      case 'Paternity': return b.paternityRemaining;
+      default:          return null;
+    }
+  }
+
+  getDays(): number {
+    if (!this.startDate() || !this.endDate()) return 0;
+    const diff = new Date(this.endDate()).getTime() - new Date(this.startDate()).getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1);
+  }
+
+  // Returns a warning message if selected days exceed balance, null otherwise
+  getBalanceWarning(): string | null {
+    const type = this.leaveType();
+    const days = this.getDays();
+    if (days === 0 || type === 'Unpaid') return null;
+    const remaining = this.getRemaining(type);
+    if (remaining === null) return null;
+    if (days > remaining) {
+      return `You are selecting ${days} day(s) but only ${remaining} day(s) of ${type} leave remaining.`;
+    }
+    return null;
+  }
+
+  onSubmit() {
+    if (!this.leaveType() || !this.startDate() || !this.endDate()) {
+      this.formError.set('Please fill all required fields.');
+      this.toastService.warning('Please fill all required fields.');
+      return;
+    }
+
+    // Block past dates
+    if (new Date(this.startDate()) < new Date(this.minDate)) {
+      this.formError.set('Start date cannot be in the past.');
+      this.toastService.error('Start date cannot be in the past.');
+      return;
+    }
+
+    if (new Date(this.endDate()) < new Date(this.startDate())) {
+      this.formError.set('End date must be after start date.');
+      this.toastService.error('End date must be after start date.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.leaveService.create({
+      leaveType: this.leaveType(),
+      startDate: this.startDate(),
+      endDate: this.endDate(),
+      reason: this.reason().trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.toastService.success('Leave request submitted successfully!');
+        this.router.navigate(['/leave']);
+      },
+      error: err => {
+        this.loading.set(false);
+        const msg = err?.error?.message ?? 'Failed to submit leave request.';
+        this.formError.set(msg);
+        this.toastService.error(msg);
+      }
+    });
+  }
+}
